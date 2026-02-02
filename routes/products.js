@@ -1219,22 +1219,39 @@ router.get('/:id', function (req, res, next) {
 
 
 router.post('/', function (req, res, next) {
+  let { title, price, description, category, images } = req.body;
+
+  // Validate bắt buộc
+  if (!title || !price || !description || !category) {
+    return res.status(400).send({
+      message: 'title, price, description, category are required'
+    });
+  }
+
+  // Validate price là số
+  if (isNaN(price)) {
+    return res.status(400).send({
+      message: 'price must be a number'
+    });
+  }
+
   let newObj = {
     id: (getMaxID(data) + 1) + '',
-    title: req.body.title,
-    slug: ConvertTitleToSlug(req.body.title),
-    price: req.body.price,
-    description: req.body.description,
-    category: req.body.category,
-    images: req.body.images,
-    creationAt: new Date(Date.now()),
-    updatedAt: new Date(Date.now())
-  }
+    title: title,
+    slug: ConvertTitleToSlug(title),
+    price: Number(price),
+    description: description,
+    category: category,
+    images: images || [],
+    creationAt: new Date(),
+    updatedAt: new Date(),
+    isDeleted: false
+  };
+
   data.push(newObj);
-  console.log(data);
   res.send(newObj);
-  //console.log(g);
-})
+});
+
 router.put('/:id', function (req, res, next) {
   let id = req.params.id;
   let result = data.find(
