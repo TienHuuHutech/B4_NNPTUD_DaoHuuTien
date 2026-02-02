@@ -1165,22 +1165,51 @@ let data = [
 ];
 //getall
 router.get('/', function (req, res, next) {
-  let queries = req.query;
-  let titleQ = queries.title ? queries.title : '';
-  let minPrice = queries.minPrice ? queries.minPrice : 0;
-  let maxPrice = queries.maxPrice ? queries.maxPrice : 1E6;
-  let page = queries.page ? queries.page : 1;
-  let limit = queries.limit ? queries.limit : 10;
-  console.log(queries);
-  let result = data.filter(
-    function (e) {
-      return (!e.isDeleted) && e.title.includes(titleQ) &&
-        e.price >= minPrice && e.price <= maxPrice
-    }
-  );
-  result = result.splice(limit * (page - 1), limit)
-  res.send(result);
+  let { title, minPrice, maxPrice, page, limit } = req.query;
+
+  // Mặc định
+  title = title || '';
+  minPrice = minPrice ? Number(minPrice) : 0;
+  maxPrice = maxPrice ? Number(maxPrice) : 1e6;
+  page = page ? Number(page) : 1;
+  limit = limit ? Number(limit) : 10;
+
+  // Validate số
+  if (isNaN(minPrice) || isNaN(maxPrice)) {
+    return res.status(400).send({ message: 'minPrice, maxPrice must be numbers' });
+  }
+
+  // Validate số nguyên dương
+  if (!Number.isInteger(page) || page <= 0) {
+    return res.status(400).send({ message: 'page must be a positive integer' });
+  }
+
+  if (!Number.isInteger(limit) || limit <= 0) {
+    return res.status(400).send({ message: 'limit must be a positive integer' });
+  }
+
+  // Validate logic giá
+  if (maxPrice < minPrice) {
+    return res.status(400).send({ message: 'maxPrice must be greater than or equal to minPrice' });
+  }
+
+  // Lọc dữ liệu
+  let result = data.filter(function (e) {
+    return (
+        !e.isDeleted &&
+        e.title.includes(title) &&
+        e.price >= minPrice &&
+        e.price <= maxPrice
+    );
+  });
+
+  // Phân trang (KHÔNG dùng splice vì làm thay đổi mảng)
+  let start = limit * (page - 1);
+  let paged = result.slice(start, start + limit);
+
+  res.send(paged);
 });
+
 
 // get by slug (equal)
 router.get('/slug/:slug', function (req, res, next) {
